@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2024 Homelessness Map</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800&display=swap');
+  :root { --font: 'Nunito Sans','Arial',sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: #fff; color: #1a1a1a; font-size: 17px; line-height: 1.4; }
+  .wrapper { max-width: 920px; margin: 0 auto; padding: 32px 24px 40px; }
+  .header-row { position: relative; margin-bottom: 5px; }
+  .toggle-anchor { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .chart-title { font-size: 1.65rem; font-weight: 700; color: #1a1a1a; line-height: 1.25; font-family: var(--font); }
+  .toggle-wrap { display: flex; background: #f0f2f5; border-radius: 6px; padding: 3px; gap: 2px; flex-shrink: 0; }
+  .toggle-btn { font-family: var(--font); font-size: 0.88rem; font-weight: 600; color: #555; background: none; border: none; border-radius: 5px; padding: 5px 13px; cursor: pointer; transition: background 0.18s, color 0.18s; white-space: nowrap; }
+  .toggle-btn:hover { color: #1a3d6e; }
+  .toggle-btn.active { background: #fff; color: #1a3d6e; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 16px; }
+  .tab-btn { padding: 7px 18px; font-family: var(--font); font-size: 1rem; font-weight: 600; color: #555; background: none; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+  .tab-btn:hover { color: #1a3d6e; }
+  .tab-btn.active { color: #1a3d6e; border-bottom-color: #1a3d6e; }
+  .legend-wrap { margin-bottom: 12px; }
+  .legend-title { font-size: 0.88rem; color: #555; font-family: var(--font); margin-bottom: 4px; font-weight: 600; }
+  #map-container { width: 100%; }
+  #map-container svg { width: 100%; height: auto; display: block; }
+  .state { stroke: #fff; stroke-width: 0.6; cursor: pointer; transition: fill 0.25s, opacity 0.12s; }
+  .state:hover { opacity: 0.75; }
+  #tooltip { position: fixed; background: #fff; border: 1px solid #ccc; border-left: 4px solid #1a3d6e; padding: 10px 14px; font-size: 0.92rem; font-family: var(--font); pointer-events: none; opacity: 0; transition: opacity 0.12s; z-index: 200; min-width: 230px; box-shadow: 0 2px 8px rgba(0,0,0,0.13); line-height: 1.65; }
+  #tooltip.visible { opacity: 1; }
+  .tt-name { font-weight: 700; font-size: 1rem; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+  .tt-row { display: flex; justify-content: space-between; gap: 16px; }
+  .tt-key { color: #555; }
+  .tt-val { font-weight: 600; }
+  .tt-row.hl .tt-key { color: #1a3d6e; font-weight: 600; }
+  .tt-row.hl .tt-val { color: #1a3d6e; }
+  .tt-sub { font-size: 0.82rem; color: #999; padding-bottom: 3px; text-align: right; }
+  .footer-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; gap: 16px; }
+  .source-note { font-size: 0.87rem; color: #777; line-height: 1.5; border-top: 1px solid #e8e8e8; padding-top: 10px; font-family: var(--font); flex: 1; }
+  .source-note strong { color: #555; }
+  .export-btn { display: flex; align-items: center; gap: 7px; background: #1a3d6e; color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-family: var(--font); font-size: 0.88rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.18s; align-self: flex-end; }
+  .export-btn:hover { background: #0f2647; }
+  .export-btn svg { flex-shrink: 0; }
+  #loading { text-align: center; padding: 60px 0; color: #888; font-size: 1rem; font-family: var(--font); }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header-row">
+    <div class="toggle-anchor">
+      <div class="toggle-wrap">
+        <button class="toggle-btn active" data-view="totals">2024 Totals</button>
+        <button class="toggle-btn" data-view="pct">2023–2024 Change</button>
+      </div>
+    </div>
+    <div class="chart-title" id="chart-title">Total People Experiencing Homelessness by State</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="overall">Overall</button>
+    <button class="tab-btn" data-tab="sheltered">Sheltered</button>
+    <button class="tab-btn" data-tab="unsheltered">Unsheltered</button>
+  </div>
+  <div class="legend-wrap">
+    <div class="legend-title" id="legend-title">Total people experiencing homelessness</div>
+    <div id="legend-svg-wrap"></div>
+  </div>
+  <div id="map-container"><div id="loading">Loading map…</div></div>
+  <div class="footer-row">
+    <div class="source-note">
+      <strong>Note:</strong> Created using the AI tool Claude; for internal use only.<br>
+      <strong>Source:</strong> 2023 and 2024 HUD Point-in-Time count data
+    </div>
+    <button class="export-btn" id="export-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export to Excel
+    </button>
+  </div>
+</div>
+<div id="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const DATA = {
+  "01":{name:"Alabama",abbr:"AL",y2023:{overall:3948,sheltered:2761,unsheltered:1187},y2024:{overall:4437,sheltered:3093,unsheltered:1344}},
+  "02":{name:"Alaska",abbr:"AK",y2023:{overall:2434,sheltered:1931,unsheltered:503},y2024:{overall:2319,sheltered:1802,unsheltered:517}},
+  "04":{name:"Arizona",abbr:"AZ",y2023:{overall:13869,sheltered:6735,unsheltered:7134},y2024:{overall:14128,sheltered:7203,unsheltered:6925}},
+  "05":{name:"Arkansas",abbr:"AR",y2023:{overall:2534,sheltered:1766,unsheltered:768},y2024:{overall:2674,sheltered:1831,unsheltered:843}},
+  "06":{name:"California",abbr:"CA",y2023:{overall:181399,sheltered:67652,unsheltered:113747},y2024:{overall:187084,sheltered:73377,unsheltered:113707}},
+  "08":{name:"Colorado",abbr:"CO",y2023:{overall:14085,sheltered:8558,unsheltered:5527},y2024:{overall:14872,sheltered:9442,unsheltered:5430}},
+  "09":{name:"Connecticut",abbr:"CT",y2023:{overall:4744,sheltered:4404,unsheltered:340},y2024:{overall:5148,sheltered:4718,unsheltered:430}},
+  "10":{name:"Delaware",abbr:"DE",y2023:{overall:1152,sheltered:1007,unsheltered:145},y2024:{overall:1198,sheltered:1026,unsheltered:172}},
+  "11":{name:"Dist. of Columbia",abbr:"DC",y2023:{overall:6521,sheltered:5998,unsheltered:523},y2024:{overall:6964,sheltered:6344,unsheltered:620}},
+  "12":{name:"Florida",abbr:"FL",y2023:{overall:25959,sheltered:13915,unsheltered:12044},y2024:{overall:30979,sheltered:17382,unsheltered:13597}},
+  "13":{name:"Georgia",abbr:"GA",y2023:{overall:11182,sheltered:8727,unsheltered:2455},y2024:{overall:12136,sheltered:9427,unsheltered:2709}},
+  "15":{name:"Hawaii",abbr:"HI",y2023:{overall:7090,sheltered:3187,unsheltered:3903},y2024:{overall:9462,sheltered:4249,unsheltered:5213}},
+  "16":{name:"Idaho",abbr:"ID",y2023:{overall:2490,sheltered:1679,unsheltered:811},y2024:{overall:2547,sheltered:1716,unsheltered:831}},
+  "17":{name:"Illinois",abbr:"IL",y2023:{overall:13331,sheltered:11917,unsheltered:1414},y2024:{overall:14007,sheltered:12485,unsheltered:1522}},
+  "18":{name:"Indiana",abbr:"IN",y2023:{overall:5765,sheltered:4752,unsheltered:1013},y2024:{overall:6419,sheltered:5199,unsheltered:1220}},
+  "19":{name:"Iowa",abbr:"IA",y2023:{overall:2947,sheltered:2611,unsheltered:336},y2024:{overall:3282,sheltered:2871,unsheltered:411}},
+  "20":{name:"Kansas",abbr:"KS",y2023:{overall:2683,sheltered:2175,unsheltered:508},y2024:{overall:2985,sheltered:2363,unsheltered:622}},
+  "21":{name:"Kentucky",abbr:"KY",y2023:{overall:4038,sheltered:3295,unsheltered:743},y2024:{overall:4363,sheltered:3530,unsheltered:833}},
+  "22":{name:"Louisiana",abbr:"LA",y2023:{overall:4765,sheltered:3253,unsheltered:1512},y2024:{overall:5001,sheltered:3414,unsheltered:1587}},
+  "23":{name:"Maine",abbr:"ME",y2023:{overall:3742,sheltered:3012,unsheltered:730},y2024:{overall:4028,sheltered:3241,unsheltered:787}},
+  "24":{name:"Maryland",abbr:"MD",y2023:{overall:7134,sheltered:6097,unsheltered:1037},y2024:{overall:8218,sheltered:6847,unsheltered:1371}},
+  "25":{name:"Massachusetts",abbr:"MA",y2023:{overall:23988,sheltered:23167,unsheltered:821},y2024:{overall:29389,sheltered:28258,unsheltered:1131}},
+  "26":{name:"Michigan",abbr:"MI",y2023:{overall:9196,sheltered:7531,unsheltered:1665},y2024:{overall:9641,sheltered:7861,unsheltered:1780}},
+  "27":{name:"Minnesota",abbr:"MN",y2023:{overall:11731,sheltered:10744,unsheltered:987},y2024:{overall:13301,sheltered:12136,unsheltered:1165}},
+  "28":{name:"Mississippi",abbr:"MS",y2023:{overall:1763,sheltered:1294,unsheltered:469},y2024:{overall:1737,sheltered:1261,unsheltered:476}},
+  "29":{name:"Missouri",abbr:"MO",y2023:{overall:7432,sheltered:5927,unsheltered:1505},y2024:{overall:8245,sheltered:6590,unsheltered:1655}},
+  "30":{name:"Montana",abbr:"MT",y2023:{overall:1722,sheltered:1273,unsheltered:449},y2024:{overall:1810,sheltered:1314,unsheltered:496}},
+  "31":{name:"Nebraska",abbr:"NE",y2023:{overall:2858,sheltered:2475,unsheltered:383},y2024:{overall:3068,sheltered:2627,unsheltered:441}},
+  "32":{name:"Nevada",abbr:"NV",y2023:{overall:11060,sheltered:6041,unsheltered:5019},y2024:{overall:12217,sheltered:6731,unsheltered:5486}},
+  "33":{name:"New Hampshire",abbr:"NH",y2023:{overall:1697,sheltered:1543,unsheltered:154},y2024:{overall:1891,sheltered:1694,unsheltered:197}},
+  "34":{name:"New Jersey",abbr:"NJ",y2023:{overall:12011,sheltered:10735,unsheltered:1276},y2024:{overall:14497,sheltered:12762,unsheltered:1735}},
+  "35":{name:"New Mexico",abbr:"NM",y2023:{overall:4025,sheltered:2140,unsheltered:1885},y2024:{overall:4340,sheltered:2340,unsheltered:2000}},
+  "36":{name:"New York",abbr:"NY",y2023:{overall:84720,sheltered:81561,unsheltered:3159},y2024:{overall:103200,sheltered:99279,unsheltered:3921}},
+  "37":{name:"North Carolina",abbr:"NC",y2023:{overall:10491,sheltered:8146,unsheltered:2345},y2024:{overall:12035,sheltered:9216,unsheltered:2819}},
+  "38":{name:"North Dakota",abbr:"ND",y2023:{overall:717,sheltered:646,unsheltered:71},y2024:{overall:797,sheltered:713,unsheltered:84}},
+  "39":{name:"Ohio",abbr:"OH",y2023:{overall:11457,sheltered:9410,unsheltered:2047},y2024:{overall:12806,sheltered:10483,unsheltered:2323}},
+  "40":{name:"Oklahoma",abbr:"OK",y2023:{overall:4637,sheltered:3380,unsheltered:1257},y2024:{overall:4892,sheltered:3538,unsheltered:1354}},
+  "41":{name:"Oregon",abbr:"OR",y2023:{overall:22409,sheltered:11602,unsheltered:10807},y2024:{overall:23161,sheltered:12106,unsheltered:11055}},
+  "42":{name:"Pennsylvania",abbr:"PA",y2023:{overall:15906,sheltered:13580,unsheltered:2326},y2024:{overall:18142,sheltered:15490,unsheltered:2652}},
+  "44":{name:"Rhode Island",abbr:"RI",y2023:{overall:1631,sheltered:1524,unsheltered:107},y2024:{overall:1942,sheltered:1811,unsheltered:131}},
+  "45":{name:"South Carolina",abbr:"SC",y2023:{overall:4644,sheltered:3429,unsheltered:1215},y2024:{overall:5225,sheltered:3780,unsheltered:1445}},
+  "46":{name:"South Dakota",abbr:"SD",y2023:{overall:993,sheltered:876,unsheltered:117},y2024:{overall:1086,sheltered:945,unsheltered:141}},
+  "47":{name:"Tennessee",abbr:"TN",y2023:{overall:10393,sheltered:7962,unsheltered:2431},y2024:{overall:11283,sheltered:8530,unsheltered:2753}},
+  "48":{name:"Texas",abbr:"TX",y2023:{overall:43118,sheltered:29817,unsheltered:13301},y2024:{overall:49918,sheltered:34133,unsheltered:15785}},
+  "49":{name:"Utah",abbr:"UT",y2023:{overall:3907,sheltered:2940,unsheltered:967},y2024:{overall:4132,sheltered:3069,unsheltered:1063}},
+  "50":{name:"Vermont",abbr:"VT",y2023:{overall:2946,sheltered:2721,unsheltered:225},y2024:{overall:3420,sheltered:3145,unsheltered:275}},
+  "51":{name:"Virginia",abbr:"VA",y2023:{overall:10236,sheltered:8508,unsheltered:1728},y2024:{overall:11521,sheltered:9506,unsheltered:2015}},
+  "53":{name:"Washington",abbr:"WA",y2023:{overall:25211,sheltered:14268,unsheltered:10943},y2024:{overall:28036,sheltered:15981,unsheltered:12055}},
+  "54":{name:"West Virginia",abbr:"WV",y2023:{overall:1415,sheltered:1145,unsheltered:270},y2024:{overall:1541,sheltered:1231,unsheltered:310}},
+  "55":{name:"Wisconsin",abbr:"WI",y2023:{overall:4857,sheltered:4279,unsheltered:578},y2024:{overall:5671,sheltered:4940,unsheltered:731}},
+  "56":{name:"Wyoming",abbr:"WY",y2023:{overall:716,sheltered:559,unsheltered:157},y2024:{overall:779,sheltered:590,unsheltered:189}},
+};
+
+const TOT_BREAKS = [1000,5000,15000,50000,100000];
+const TOT_COLORS = ['#c6dbef','#6baed6','#2171b5','#08519c','#08306b','#041d45'];
+const PCT_BREAKS = [-40,-20,-10,0,10,20,40];
+const PCT_COLORS = ['#2166ac','#74add1','#abd9e9','#f7f7f7','#fdae61','#d73027','#a50026'];
+const SKIP_LABEL = new Set(['DC','CT','DE','RI','NJ','MD','NH','VT','MA']);
+const FONT = "'Nunito Sans',Arial,sans-serif";
+
+// Centroid offsets for labels that overlap borders at default position
+const LABEL_OFFSETS = {
+  'MI': [14, 16],
+  'FL': [16, 10],
+  'LA': [-10, -8],
+};
+
+// Absolute label positions (override centroid entirely)
+const LABEL_ABSOLUTE = {
+  'HI': [260, 570],
+};
+
+let activeView = 'totals', activeTab = 'overall';
+
+function getTotalColor(fips, tab) {
+  const r = DATA[fips]; if (!r) return '#ddd';
+  const v = r.y2024[tab];
+  for (let i=0; i<TOT_BREAKS.length; i++) { if (v < TOT_BREAKS[i]) return TOT_COLORS[i]; }
+  return TOT_COLORS[TOT_COLORS.length-1];
+}
+function pct(fips, tab) {
+  const r = DATA[fips]; if (!r) return null;
+  const v23=r.y2023[tab], v24=r.y2024[tab];
+  return v23 ? ((v24-v23)/v23)*100 : null;
+}
+function interpolateHex(c1,c2,t) {
+  const p=h=>parseInt(h,16);
+  const r1=p(c1.slice(1,3)),g1=p(c1.slice(3,5)),b1=p(c1.slice(5,7));
+  const r2=p(c2.slice(1,3)),g2=p(c2.slice(3,5)),b2=p(c2.slice(5,7));
+  return `rgb(${Math.round(r1+t*(r2-r1))},${Math.round(g1+t*(g2-g1))},${Math.round(b1+t*(b2-b1))})`;
+}
+function getPctColor(fips, tab) {
+  const v=pct(fips,tab); if (v===null) return '#ccc';
+  const cl=Math.max(PCT_BREAKS[0],Math.min(PCT_BREAKS[PCT_BREAKS.length-1],v));
+  for (let i=0; i<PCT_BREAKS.length-1; i++) {
+    if (cl<=PCT_BREAKS[i+1]) { const t=(cl-PCT_BREAKS[i])/(PCT_BREAKS[i+1]-PCT_BREAKS[i]); return interpolateHex(PCT_COLORS[i],PCT_COLORS[i+1],t); }
+  }
+  return PCT_COLORS[PCT_COLORS.length-1];
+}
+function getFillColor(fips) { return activeView==='totals' ? getTotalColor(fips,activeTab) : getPctColor(fips,activeTab); }
+function totalLabelColor(fill) { return (['#c6dbef','#6baed6'].includes(fill)) ? '#1a3050' : '#fff'; }
+function pctLabelColor(v) { if (v===null) return '#555'; return (v<=-20||v>=20)?'#fff':'#333'; }
+function getLabelColor(fips) {
+  const r = DATA[fips];
+  if (r && LABEL_ABSOLUTE[r.abbr]) return '#333';
+  if (activeView==='totals') return totalLabelColor(getTotalColor(fips,activeTab));
+  return pctLabelColor(pct(fips,activeTab));
+}
+function fmt(n) { return n!=null ? n.toLocaleString() : '—'; }
+function fmtP(v) { if (v===null) return '—'; return (v>=0?'+':'')+v.toFixed(1)+'%'; }
+
+function renderLegend() {
+  const wrap = document.getElementById('legend-svg-wrap');
+  wrap.innerHTML = '';
+  const BAR_H=14, TICK_Y=BAR_H+14, SVG_H=TICK_Y+4;
+  const FS = FONT;
+
+  if (activeView==='totals') {
+    document.getElementById('legend-title').textContent=activeTab==='overall'?'Total people experiencing homelessness':activeTab==='sheltered'?'Total people experiencing sheltered homelessness':'Total people experiencing unsheltered homelessness';
+    const labels=['0','1k','5k','15k','50k','100k','100k+'];
+    const BAR_W=455, LO_W=42, HI_W=36, BAR_X=LO_W+6, SVG_W=BAR_X+BAR_W+6+HI_W;
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',SVG_W); svg.setAttribute('height',SVG_H); svg.style.display='block';
+    const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+    const grad=document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+    grad.setAttribute('id','tot-grad'); grad.setAttribute('x1','0%'); grad.setAttribute('x2','100%'); grad.setAttribute('y1','0%'); grad.setAttribute('y2','0%');
+    TOT_COLORS.forEach((c,i)=>{ const s=document.createElementNS('http://www.w3.org/2000/svg','stop'); s.setAttribute('offset',(i/(TOT_COLORS.length-1)*100)+'%'); s.setAttribute('stop-color',c); grad.appendChild(s); });
+    defs.appendChild(grad); svg.appendChild(defs);
+    const mkTxt=(x,y,anchor,txt)=>{ const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x); t.setAttribute('y',y); t.setAttribute('text-anchor',anchor); t.setAttribute('fill','#555'); t.setAttribute('font-size','13'); t.setAttribute('font-family',FS); t.textContent=txt; svg.appendChild(t); };
+    mkTxt(BAR_X-6,BAR_H/2+5,'end','Fewer');
+    const bar=document.createElementNS('http://www.w3.org/2000/svg','rect'); bar.setAttribute('x',BAR_X); bar.setAttribute('y',0); bar.setAttribute('width',BAR_W); bar.setAttribute('height',BAR_H); bar.setAttribute('fill','url(#tot-grad)'); svg.appendChild(bar);
+    mkTxt(BAR_X+BAR_W+6,BAR_H/2+5,'start','More');
+    labels.forEach((lbl,i)=>{ const x=BAR_X+(i/(labels.length-1))*BAR_W; const anchor=i===0?'start':i===labels.length-1?'end':'middle'; const line=document.createElementNS('http://www.w3.org/2000/svg','line'); line.setAttribute('x1',x); line.setAttribute('x2',x); line.setAttribute('y1',BAR_H); line.setAttribute('y2',BAR_H+4); line.setAttribute('stroke','#999'); line.setAttribute('stroke-width','1'); svg.appendChild(line); const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x); t.setAttribute('y',TICK_Y); t.setAttribute('text-anchor',anchor); t.setAttribute('fill','#666'); t.setAttribute('font-size','12'); t.setAttribute('font-family',FS); t.textContent=lbl; svg.appendChild(t); });
+    wrap.appendChild(svg);
+  } else {
+    document.getElementById('legend-title').textContent=activeTab==='overall'?'Percent change in people experiencing homelessness from 2023 to 2024':activeTab==='sheltered'?'Percent change in people experiencing sheltered homelessness from 2023 to 2024':'Percent change in people experiencing unsheltered homelessness from 2023 to 2024';
+    const labels=['≤−40%','−20%','−10%','0%','+10%','+20%','≥+40%'];
+    const nC=PCT_COLORS.length, swW=65, BAR_W=nC*swW, LO_W=58, HI_W=52, BAR_X=LO_W+6, SVG_W=BAR_X+BAR_W+6+HI_W;
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',SVG_W); svg.setAttribute('height',SVG_H); svg.style.display='block';
+    const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+    const grad=document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+    grad.setAttribute('id','pct-grad'); grad.setAttribute('x1','0%'); grad.setAttribute('x2','100%'); grad.setAttribute('y1','0%'); grad.setAttribute('y2','0%');
+    PCT_COLORS.forEach((c,i)=>{ const s=document.createElementNS('http://www.w3.org/2000/svg','stop'); s.setAttribute('offset',(i/(PCT_COLORS.length-1)*100)+'%'); s.setAttribute('stop-color',c); grad.appendChild(s); });
+    defs.appendChild(grad); svg.appendChild(defs);
+    const mkTxt=(x,y,anchor,txt)=>{ const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x); t.setAttribute('y',y); t.setAttribute('text-anchor',anchor); t.setAttribute('fill','#555'); t.setAttribute('font-size','13'); t.setAttribute('font-family',FS); t.textContent=txt; svg.appendChild(t); };
+    mkTxt(BAR_X-6,BAR_H/2+5,'end','Decrease');
+    const bar=document.createElementNS('http://www.w3.org/2000/svg','rect'); bar.setAttribute('x',BAR_X); bar.setAttribute('y',0); bar.setAttribute('width',BAR_W); bar.setAttribute('height',BAR_H); bar.setAttribute('fill','url(#pct-grad)'); svg.appendChild(bar);
+    mkTxt(BAR_X+BAR_W+6,BAR_H/2+5,'start','Increase');
+    labels.forEach((lbl,i)=>{ const x=BAR_X+(i/(labels.length-1))*BAR_W; const anchor=i===0?'start':i===labels.length-1?'end':'middle'; const line=document.createElementNS('http://www.w3.org/2000/svg','line'); line.setAttribute('x1',x); line.setAttribute('x2',x); line.setAttribute('y1',BAR_H); line.setAttribute('y2',BAR_H+4); line.setAttribute('stroke','#999'); line.setAttribute('stroke-width','1'); svg.appendChild(line); const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x); t.setAttribute('y',TICK_Y); t.setAttribute('text-anchor',anchor); t.setAttribute('fill','#666'); t.setAttribute('font-size','12'); t.setAttribute('font-family',FS); t.textContent=lbl; svg.appendChild(t); });
+    wrap.appendChild(svg);
+  }
+}
+
+const TITLES = {
+  totals:{overall:'Total People Experiencing Homelessness by State',sheltered:'Total People Experiencing Sheltered Homelessness by State',unsheltered:'Total People Experiencing Unsheltered Homelessness by State'},
+  pct:{overall:'Percent Change in People Experiencing Homelessness by State',sheltered:'Percent Change in People Experiencing Sheltered Homelessness by State',unsheltered:'Percent Change in People Experiencing Unsheltered Homelessness by State'}
+};
+function updateTitles() {
+  document.getElementById('chart-title').textContent=TITLES[activeView][activeTab];
+}
+
+function buildTooltip(fips) {
+  const rec=DATA[fips]; if (!rec) return '';
+  const tabs=['overall','sheltered','unsheltered'], labs=['Overall','Sheltered','Unsheltered'];
+  if (activeView==='totals') {
+    return `<div class="tt-name">${rec.name}</div>`+tabs.map((t,i)=>`<div class="tt-row${t===activeTab?' hl':''}"><span class="tt-key">${labs[i]}</span><span class="tt-val">${fmt(rec.y2024[t])}</span></div>`).join('');
+  } else {
+    return `<div class="tt-name">${rec.name}</div>`+tabs.map((t,i)=>{const p=pct(fips,t);return `<div class="tt-row${t===activeTab?' hl':''}"><span class="tt-key">${labs[i]}</span><span class="tt-val">${fmtP(p)}</span></div><div class="tt-sub">${fmt(rec.y2023[t])} → ${fmt(rec.y2024[t])}</div>`;}).join('');
+  }
+}
+
+// ── Excel Export ──
+function exportToExcel() {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Full data
+  const rows = [
+    ["State","Abbr","2023 Overall","2023 Sheltered","2023 Unsheltered","2024 Overall","2024 Sheltered","2024 Unsheltered","Chg Overall (%)","Chg Sheltered (%)","Chg Unsheltered (%)"]
+  ];
+  Object.values(DATA).sort((a,b)=>a.name.localeCompare(b.name)).forEach(r=>{
+    const chgO = r.y2023.overall ? ((r.y2024.overall-r.y2023.overall)/r.y2023.overall*100) : null;
+    const chgS = r.y2023.sheltered ? ((r.y2024.sheltered-r.y2023.sheltered)/r.y2023.sheltered*100) : null;
+    const chgU = r.y2023.unsheltered ? ((r.y2024.unsheltered-r.y2023.unsheltered)/r.y2023.unsheltered*100) : null;
+    rows.push([
+      r.name, r.abbr,
+      r.y2023.overall, r.y2023.sheltered, r.y2023.unsheltered,
+      r.y2024.overall, r.y2024.sheltered, r.y2024.unsheltered,
+      chgO!=null ? +chgO.toFixed(2) : '',
+      chgS!=null ? +chgS.toFixed(2) : '',
+      chgU!=null ? +chgU.toFixed(2) : ''
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:22},{wch:6},{wch:14},{wch:16},{wch:18},{wch:14},{wch:16},{wch:18},{wch:18},{wch:20},{wch:22}
+  ];
+
+  // Style header row bold (xlsx-style not natively supported in free xlsx, but we set bold via cell object)
+  const hdrRange = XLSX.utils.decode_range(ws['!ref']);
+  for (let C=hdrRange.s.c; C<=hdrRange.e.c; C++) {
+    const addr = XLSX.utils.encode_cell({r:0,c:C});
+    if (!ws[addr]) continue;
+    ws[addr].s = { font:{bold:true}, fill:{fgColor:{rgb:"1A3D6E"}}, font:{bold:true,color:{rgb:"FFFFFF"}} };
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, "PIT Count Data");
+
+  // Sheet 2: 2024 totals only
+  const rows2 = [["State","Abbr","Overall","Sheltered","Unsheltered"]];
+  Object.values(DATA).sort((a,b)=>b.y2024.overall-a.y2024.overall).forEach(r=>{
+    rows2.push([r.name,r.abbr,r.y2024.overall,r.y2024.sheltered,r.y2024.unsheltered]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(rows2);
+  ws2['!cols'] = [{wch:22},{wch:6},{wch:12},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws2, "2024 Totals (Ranked)");
+
+  // Sheet 3: 2023–2024 change
+  const rows3 = [["State","Abbr","Overall % Chg","Sheltered % Chg","Unsheltered % Chg"]];
+  Object.values(DATA).sort((a,b)=>{
+    const ca=((a.y2024.overall-a.y2023.overall)/a.y2023.overall*100);
+    const cb=((b.y2024.overall-b.y2023.overall)/b.y2023.overall*100);
+    return cb-ca;
+  }).forEach(r=>{
+    const chgO = +((r.y2024.overall-r.y2023.overall)/r.y2023.overall*100).toFixed(2);
+    const chgS = +((r.y2024.sheltered-r.y2023.sheltered)/r.y2023.sheltered*100).toFixed(2);
+    const chgU = r.y2023.unsheltered ? +((r.y2024.unsheltered-r.y2023.unsheltered)/r.y2023.unsheltered*100).toFixed(2) : '';
+    rows3.push([r.name, r.abbr, chgO, chgS, chgU]);
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(rows3);
+  ws3['!cols'] = [{wch:22},{wch:6},{wch:16},{wch:16},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws3, "2023-2024 Change (Ranked)");
+
+  XLSX.writeFile(wb, "HUD_PIT_Homelessness_2023_2024.xlsx");
+}
+
+async function buildMap() {
+  const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json');
+  document.getElementById('loading').remove();
+  const svg = d3.select('#map-container').append('svg').attr('viewBox','0 0 975 610').attr('preserveAspectRatio','xMidYMid meet');
+  const geoPath = d3.geoPath();
+  const statesGeo = topojson.feature(us, us.objects.states);
+
+  const statePaths = svg.selectAll('.state').data(statesGeo.features).enter().append('path')
+    .attr('class','state').attr('d',geoPath)
+    .attr('fill',d=>getFillColor(String(d.id).padStart(2,'0')));
+
+  svg.append('path').datum(topojson.mesh(us,us.objects.states,(a,b)=>a!==b))
+    .attr('fill','none').attr('stroke','#fff').attr('stroke-width',0.8).attr('stroke-linejoin','round').attr('d',geoPath);
+
+  const labelGroup = svg.append('g').attr('pointer-events','none');
+  const stateLabels = labelGroup.selectAll('text').data(statesGeo.features).enter().append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('x',d=>{
+      const r=DATA[String(d.id).padStart(2,'0')];
+      if (r && LABEL_ABSOLUTE[r.abbr]) return LABEL_ABSOLUTE[r.abbr][0];
+      const off = r && LABEL_OFFSETS[r.abbr];
+      return geoPath.centroid(d)[0] + (off ? off[0] : 0);
+    })
+    .attr('y',d=>{
+      const r=DATA[String(d.id).padStart(2,'0')];
+      if (r && LABEL_ABSOLUTE[r.abbr]) return LABEL_ABSOLUTE[r.abbr][1];
+      const off = r && LABEL_OFFSETS[r.abbr];
+      return geoPath.centroid(d)[1] + (off ? off[1] : 0);
+    })
+    .attr('font-family',FONT).attr('font-weight','700')
+    .attr('font-size',d=>{ const r=DATA[String(d.id).padStart(2,'0')]; return (!r||SKIP_LABEL.has(r.abbr))?'0':'15'; })
+    .attr('fill',d=>getLabelColor(String(d.id).padStart(2,'0')))
+    .text(d=>{ const r=DATA[String(d.id).padStart(2,'0')]; return (!r||SKIP_LABEL.has(r.abbr))?'':r.abbr; });
+
+  const tooltip=document.getElementById('tooltip');
+  statePaths
+    .on('mousemove',(event,d)=>{ const fips=String(d.id).padStart(2,'0'); if(!DATA[fips])return; tooltip.innerHTML=buildTooltip(fips); tooltip.classList.add('visible'); tooltip.style.left=Math.min(event.clientX+16,window.innerWidth-250)+'px'; tooltip.style.top=(event.clientY-10)+'px'; })
+    .on('mouseleave',()=>tooltip.classList.remove('visible'));
+
+  function redraw() {
+    statePaths.attr('fill',d=>getFillColor(String(d.id).padStart(2,'0')));
+    stateLabels.attr('fill',d=>getLabelColor(String(d.id).padStart(2,'0')));
+    renderLegend(); updateTitles();
+  }
+
+  document.querySelectorAll('.toggle-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{ document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); activeView=btn.dataset.view; redraw(); });
+  });
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); activeTab=btn.dataset.tab; redraw(); });
+  });
+  document.getElementById('export-btn').addEventListener('click', exportToExcel);
+}
+
+renderLegend();
+updateTitles();
+buildMap();
+</script>
+</body>
+</html>
