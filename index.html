@@ -45,8 +45,9 @@
       text-decoration: none;
       color: inherit;
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
       transition: border-color 0.15s, background 0.15s;
     }
     .card:hover {
@@ -54,8 +55,9 @@
       background: #f7f7f7;
     }
     .card-icon {
-      width: 36px;
-      height: 36px;
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
       border-radius: 8px;
       background: #D6E4F0;
       display: flex;
@@ -63,20 +65,27 @@
       justify-content: center;
     }
     .card-icon i {
-      font-size: 18px;
+      font-size: 28px;
       color: #0C61A4;
     }
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
     .card-label {
-      font-size: 13px;
+      font-size: 12px;
       color: #6b6b6b;
     }
     .card-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 500;
       line-height: 1.4;
+      margin-bottom: 4px;
     }
     .card-arrow {
-      margin-top: auto;
       display: flex;
       align-items: center;
       gap: 4px;
@@ -94,19 +103,19 @@
     <div class="grid">
       <a class="card" href="homelessness-state-map.html">
         <div class="card-icon"><i class="ti ti-map" aria-hidden="true"></i></div>
-        <div>
+        <div class="card-body">
           <div class="card-label">State map</div>
           <div class="card-title">Overall Homelessness by State</div>
+          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
         </div>
-        <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
       </a>
       <a class="card" href="pit-trends-by-state-since-2015.html">
         <div class="card-icon"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
-        <div>
+        <div class="card-body">
           <div class="card-label">Trend analysis</div>
           <div class="card-title">Percent Change in Homelessness Since 2015</div>
+          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
         </div>
-        <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
       </a>
     </div>
   </div>
