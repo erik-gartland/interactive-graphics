@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HUD Point-in-Time Homelessness</title>
   <link rel="stylesheet" href="https://use.typekit.net/adb6btq.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -234,7 +234,7 @@ function mkDs(label, data, color, opts) {
     pointRadius:0,
     pointHoverRadius: (opts&&opts.dashed) ? 0 : 6,
     pointHoverBackgroundColor:color, pointHoverBorderColor:'#fff',
-    pointHoverBorderWidth:2, fill:false, tension:0.2,
+    pointHoverBorderWidth:2, fill:false, tension:0,
     spanGaps: !!(opts&&opts.spanGaps),
     ...(opts&&opts.dashed ? {borderDash:[5,4]} : {})};
 }
@@ -367,7 +367,7 @@ function render(){
               const nm=nameMap[c.dataset.label];
               if(!nm)return null;
               const i=c.dataIndex;
-              if(view==='pct')return nm+': '+Math.round(v)+'%  ('+d[nm].counts[i].toLocaleString()+' people)';
+              if(view==='pct')return nm+': '+Math.round(v)+'%';
               return nm+': '+v.toLocaleString()+' people';
             }
           }
@@ -384,18 +384,18 @@ function render(){
 document.getElementById('stateSelect').addEventListener('change',render);
 (function(){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';s.onload=render;document.head.appendChild(s);})();
 
-function exportToExcel(){
+async function exportToExcel(){
   const state=document.getElementById('stateSelect').value;
   const d=RAW[state];
 
-  // Build rows: header + one row per year
-  const headers=['Year','Overall Count','Overall % Change vs 2015','Sheltered Count','Sheltered % Change vs 2015','Unsheltered Count','Unsheltered % Change vs 2015'];
-  const rows=[headers];
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet(state.substring(0,31)); // sheet name max 31 chars
+  ws.addRow(['Year','Overall Count','Overall % Change vs 2015','Sheltered Count','Sheltered % Change vs 2015','Unsheltered Count','Unsheltered % Change vs 2015']);
   YEARS.forEach((yr,i)=>{
     // 2021 (index 6) Overall/Unsheltered are interpolated for the chart only; export as N/A.
     // Sheltered 2021 is HUD's actual reported value and is exported normally.
     const na = i===6;
-    rows.push([
+    ws.addRow([
       yr,
       na ? 'N/A' : d.Overall.counts[i],
       na ? 'N/A' : d.Overall.pcts[i],
@@ -406,18 +406,28 @@ function exportToExcel(){
     ]);
   });
 
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const widths=[8,16,26,16,26,18,28];
+  ws.columns.forEach((col,i)=>{ col.width=widths[i]; });
 
-  // Column widths
-  ws['!cols']=[{wch:8},{wch:16},{wch:26},{wch:16},{wch:26},{wch:18},{wch:28}];
+  // Number formats: counts "123,456" (cols 2,4,6); percents "12.3%" (cols 3,5,7).
+  // Right-align the N/A text cells so they line up with the numbers.
+  const lastRow=ws.rowCount;
+  for(let R=2; R<=lastRow; R++){
+    [2,4,6].forEach(C=>{ const cell=ws.getCell(R,C); if(typeof cell.value==='number') cell.numFmt='#,##0'; });
+    [3,5,7].forEach(C=>{ const cell=ws.getCell(R,C); if(typeof cell.value==='number') cell.numFmt='0.0"%"'; });
+    [2,3,6,7].forEach(C=>{ const cell=ws.getCell(R,C); if(cell.value==='N/A') cell.alignment={horizontal:'right'}; });
+  }
 
-  // Format pct columns as percentage display (they're already decimal-less numbers like 36.6)
-  // Style header row bold — note: full styling requires xlsx-style; we use basic xlsx here
-  XLSX.utils.book_append_sheet(wb,ws,state.substring(0,31)); // sheet name max 31 chars
+  ws.getRow(1).font={bold:true};                      // bold header row
+  ws.views=[{state:'frozen', xSplit:1, ySplit:1}];    // freeze at B2 (Year column, header row)
 
-  const filename='PIT_Homelessness_'+state.replace(/[^a-zA-Z0-9]/g,'_')+'.xlsx';
-  XLSX.writeFile(wb,filename);
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='PIT_Homelessness_'+state.replace(/[^a-zA-Z0-9]/g,'_')+'.xlsx';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
