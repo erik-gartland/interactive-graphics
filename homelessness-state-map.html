@@ -10,19 +10,15 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: #fff; color: #1a1a1a; font-size: 17px; line-height: 1.4; }
   .wrapper { max-width: 920px; margin: 0 auto; padding: 32px 24px 40px; }
-  .header-row { position: relative; margin-bottom: 5px; }
-  .toggle-anchor { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-  .chart-title { font-size: 1.65rem; font-weight: 700; color: #1a1a1a; line-height: 1.25; font-family: var(--font); }
-  .toggle-wrap { display: flex; background: #f0f2f5; border-radius: 6px; padding: 3px; gap: 2px; flex-shrink: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 14px; }
+  .chart-title { font-size: 1.65rem; font-weight: 700; color: #1a1a1a; line-height: 1.25; font-family: var(--font); margin-bottom: 16px; }
+  .toggle-wrap { display: flex; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; padding: 3px; gap: 2px; flex-shrink: 0; }
   .toggle-group { display: flex; flex-direction: column; align-items: flex-start; }
   .toggle-eyebrow { font-size: 12px; color: #666; margin-bottom: 4px; font-family: var(--font); }
+  .type-select { font-family: var(--font); font-size: 14px; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff; color: #222; cursor: pointer; min-width: 150px; }
   .toggle-btn { font-family: var(--font); font-size: 0.88rem; font-weight: 400; color: #555; background: none; border: none; border-radius: 5px; padding: 5px 13px; cursor: pointer; transition: background 0.18s, color 0.18s; white-space: nowrap; }
   .toggle-btn:hover { color: #222; }
   .toggle-btn.active { background: #fff; color: #222; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
-  .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 16px; }
-  .tab-btn { padding: 7px 18px; font-family: var(--font); font-size: 1rem; font-weight: 400; color: #555; background: none; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
-  .tab-btn:hover { color: #222; }
-  .tab-btn.active { color: #222; border-bottom-color: #222; }
   .legend-wrap { margin-bottom: 12px; }
   .legend-title { font-size: 0.88rem; color: #555; font-family: var(--font); margin-bottom: 4px; font-weight: 400; }
   #map-container { width: 100%; }
@@ -49,24 +45,24 @@
 </head>
 <body>
 <div class="wrapper">
-  <div class="header-row">
-    <div class="toggle-anchor">
-      <div class="toggle-group">
-        <div class="toggle-eyebrow">View</div>
-        <div class="toggle-wrap">
-          <button class="toggle-btn active" data-view="totals">2025 Totals</button>
-          <button class="toggle-btn" data-view="pct">2024–2025 Change</button>
-        </div>
+  <div class="controls">
+    <div class="toggle-group">
+      <div class="toggle-eyebrow">Type</div>
+      <select id="typeSelect" class="type-select">
+        <option value="overall">Overall</option>
+        <option value="sheltered">Sheltered</option>
+        <option value="unsheltered">Unsheltered</option>
+      </select>
+    </div>
+    <div class="toggle-group">
+      <div class="toggle-eyebrow">View</div>
+      <div class="toggle-wrap">
+        <button class="toggle-btn active" data-view="totals">2025 Totals</button>
+        <button class="toggle-btn" data-view="pct">2024–2025 Change</button>
       </div>
     </div>
-    <div class="chart-title" id="chart-title">Total People Experiencing Homelessness by State</div>
   </div>
-
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="overall">Overall</button>
-    <button class="tab-btn" data-tab="sheltered">Sheltered</button>
-    <button class="tab-btn" data-tab="unsheltered">Unsheltered</button>
-  </div>
+  <div class="chart-title" id="chart-title">Total People Experiencing Homelessness by State</div>
   <div class="legend-wrap">
     <div class="legend-title" id="legend-title">Total people experiencing homelessness</div>
     <div id="legend-svg-wrap"></div>
@@ -340,9 +336,7 @@ async function buildMap() {
   document.querySelectorAll('.toggle-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{ document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); activeView=btn.dataset.view; redraw(); });
   });
-  document.querySelectorAll('.tab-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); activeTab=btn.dataset.tab; redraw(); });
-  });
+  document.getElementById('typeSelect').addEventListener('change', e=>{ activeTab=e.target.value; redraw(); });
   document.getElementById('export-btn').addEventListener('click', exportToExcel);
 }
 
