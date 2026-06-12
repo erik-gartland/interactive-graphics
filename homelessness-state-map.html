@@ -20,7 +20,6 @@
   .toggle-btn:hover { color: #222; }
   .toggle-btn.active { background: #fff; color: #222; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
   .legend-wrap { margin-bottom: 12px; }
-  .legend-title { font-size: 0.88rem; color: #555; font-family: var(--font); margin-bottom: 4px; font-weight: 400; }
   #map-container { width: 100%; }
   #map-container svg { width: 100%; height: auto; display: block; }
   .state { stroke: #fff; stroke-width: 0.6; cursor: pointer; transition: fill 0.25s, opacity 0.12s; }
@@ -62,9 +61,8 @@
       </div>
     </div>
   </div>
-  <div class="chart-title" id="chart-title">Total People Experiencing Homelessness by State</div>
+  <div class="chart-title" id="chart-title">Total People Experiencing Homelessness in 2025</div>
   <div class="legend-wrap">
-    <div class="legend-title" id="legend-title">Total people experiencing homelessness</div>
     <div id="legend-svg-wrap"></div>
   </div>
   <div id="map-container"><div id="loading">Loading map…</div></div>
@@ -201,7 +199,6 @@ function renderLegend() {
   const FS = FONT;
 
   if (activeView==='totals') {
-    document.getElementById('legend-title').textContent=activeTab==='overall'?'Total people experiencing homelessness':activeTab==='sheltered'?'Total people experiencing sheltered homelessness':'Total people experiencing unsheltered homelessness';
     const labels=['0','1k','5k','15k','50k','50k+'];
     const BAR_W=455, LO_W=0, HI_W=0, BAR_X=LO_W+6, SVG_W=BAR_X+BAR_W+6+HI_W;
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -212,7 +209,6 @@ function renderLegend() {
     labels.forEach((lbl,i)=>{ const x=BAR_X+(i/(labels.length-1))*BAR_W; const anchor=i===0?'start':i===labels.length-1?'end':'middle'; const line=document.createElementNS('http://www.w3.org/2000/svg','line'); line.setAttribute('x1',x); line.setAttribute('x2',x); line.setAttribute('y1',BAR_H); line.setAttribute('y2',BAR_H+4); line.setAttribute('stroke','#999'); line.setAttribute('stroke-width','1'); svg.appendChild(line); const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x); t.setAttribute('y',TICK_Y); t.setAttribute('text-anchor',anchor); t.setAttribute('fill','#666'); t.setAttribute('font-size','12'); t.setAttribute('font-family',FS); t.textContent=lbl; svg.appendChild(t); });
     wrap.appendChild(svg);
   } else {
-    document.getElementById('legend-title').textContent=activeTab==='overall'?'Percent change in people experiencing homelessness from 2024 to 2025':activeTab==='sheltered'?'Percent change in people experiencing sheltered homelessness from 2024 to 2025':'Percent change in people experiencing unsheltered homelessness from 2024 to 2025';
     const cutLabels=['−20%','−10%','−5%','0%','+5%','+10%','+20%'];
     const SVGNS='http://www.w3.org/2000/svg';
     const nSeg=PCT_COLORS.length, segW=57, BAR_W=nSeg*segW, BAR_X=6, SVG_W=BAR_X+BAR_W+6;
@@ -225,8 +221,8 @@ function renderLegend() {
 }
 
 const TITLES = {
-  totals:{overall:'Total People Experiencing Homelessness by State',sheltered:'Total People Experiencing Sheltered Homelessness by State',unsheltered:'Total People Experiencing Unsheltered Homelessness by State'},
-  pct:{overall:'Percent Change in People Experiencing Homelessness by State',sheltered:'Percent Change in People Experiencing Sheltered Homelessness by State',unsheltered:'Percent Change in People Experiencing Unsheltered Homelessness by State'}
+  totals:{overall:'Total People Experiencing Homelessness in 2025',sheltered:'Total People Experiencing Sheltered Homelessness in 2025',unsheltered:'Total People Experiencing Unsheltered Homelessness in 2025'},
+  pct:{overall:'Percent Change in People Experiencing Homelessness From 2024 to 2025',sheltered:'Percent Change in People Experiencing Sheltered Homelessness From 2024 to 2025',unsheltered:'Percent Change in People Experiencing Unsheltered Homelessness From 2024 to 2025'}
 };
 function updateTitles() {
   document.getElementById('chart-title').textContent=TITLES[activeView][activeTab];
