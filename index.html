@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+<!-- Upload as: interactive-graphics/index.html -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>Interactive Graphics</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.53.0/dist/tabler-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,6 +18,17 @@
       padding: 3rem 1.5rem;
     }
     .portal { max-width: 680px; margin: 0 auto; }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #6b6b6b;
+      text-decoration: none;
+      margin-bottom: 1.25rem;
+    }
+    .back:hover { color: #0C61A4; }
+    .back i { font-size: 14px; }
     .title {
       font-size: 22px;
       font-weight: 700;
@@ -55,6 +67,7 @@
       border-color: #aaaaaa;
       background: #f7f7f7;
     }
+    .card:focus-visible, .back:focus-visible { outline: 2px solid #0C61A4; outline-offset: 2px; }
     .card-icon {
       flex-shrink: 0;
       width: 52px;
@@ -92,38 +105,40 @@
       gap: 4px;
       font-size: 12px;
       color: #0C61A4;
+      transition: color 0.15s;
     }
+    .card:hover .card-arrow, .card:focus-visible .card-arrow { color: #083F6E; }
     .card-arrow i { font-size: 14px; }
+    .card-arrow + .card-label { margin-top: 2px; }
   </style>
 </head>
 <body>
   <div class="portal">
-    <div class="title">Interactive Graphics</div>
-    <div class="subtitle">Housing &amp; homelessness data visualizations</div>
+    <h1 class="title">Interactive Graphics</h1>
     <hr class="divider">
     <div class="grid">
-      <a class="card" href="homelessness-state-map.html">
+      <a class="card" href="maps/">
         <div class="card-icon"><i class="ti ti-map" aria-hidden="true"></i></div>
         <div class="card-body">
-          <div class="card-label">State map</div>
-          <div class="card-title">Overall Homelessness by State</div>
-          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
+          <div class="card-title">Maps</div>
+          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> Browse</div>
+          <div class="card-label">1 graphic</div>
         </div>
       </a>
-      <a class="card" href="pit-trends-by-state-since-2015.html">
-        <div class="card-icon"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
-        <div class="card-body">
-          <div class="card-label">Trend analysis</div>
-          <div class="card-title">Percent Change in Homelessness Since 2015</div>
-          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
-        </div>
-      </a>
-      <a class="card" href="housing-supply-rental-assistance.html">
+      <a class="card" href="chartbooks/">
         <div class="card-icon"><i class="ti ti-book" aria-hidden="true"></i></div>
         <div class="card-body">
-          <div class="card-label">Scrolling chart book</div>
-          <div class="card-title">Housing Supply and Rental Assistance</div>
-          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
+          <div class="card-title">Chart Books</div>
+          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> Browse</div>
+          <div class="card-label">2 graphics</div>
+        </div>
+      </a>
+      <a class="card" href="charts/">
+        <div class="card-icon"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+        <div class="card-body">
+          <div class="card-title">Charts</div>
+          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> Browse</div>
+          <div class="card-label">1 graphic</div>
         </div>
       </a>
     </div>
