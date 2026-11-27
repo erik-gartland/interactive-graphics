@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!-- Upload as: interactive-graphics/chartbooks/index.html -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Chart Books · Interactive Graphics</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.53.0/dist/tabler-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Fira Code', monospace;
+      background: #ffffff;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 3rem 1.5rem;
+    }
+    .portal { max-width: 680px; margin: 0 auto; }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #6b6b6b;
+      text-decoration: none;
+      margin-bottom: 1.25rem;
+    }
+    .back:hover { color: #0C61A4; }
+    .back i { font-size: 14px; }
+    .title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #6b6b6b;
+    }
+    .divider {
+      border: none;
+      border-top: 0.5px solid #e0e0e0;
+      margin: 1.5rem 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: #ffffff;
+      border: 0.5px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .card:hover {
+      border-color: #aaaaaa;
+      background: #f7f7f7;
+    }
+    .card:focus-visible, .back:focus-visible { outline: 2px solid #0C61A4; outline-offset: 2px; }
+    .card-icon {
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      background: #D6E4F0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-icon i {
+      font-size: 28px;
+      color: #0C61A4;
+    }
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+    .card-label {
+      font-size: 12px;
+      color: #6b6b6b;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+    .card-arrow {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #0C61A4;
+      transition: color 0.15s;
+    }
+    .card:hover .card-arrow, .card:focus-visible .card-arrow { color: #083F6E; }
+    .card-arrow i { font-size: 14px; }
+    .card-arrow + .card-label { margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="portal">
+    <a class="back" href="../"><i class="ti ti-arrow-left" aria-hidden="true"></i> Interactive Graphics</a>
+    <h1 class="title">Chart Books</h1>
+    <hr class="divider">
+    <div class="grid">
+      <a class="card" href="unmet-need-rental-assistance.html">
+        <div class="card-icon"><i class="ti ti-book" aria-hidden="true"></i></div>
+        <div class="card-body">
+          <div class="card-title">Unmet Need for Rental Assistance</div>
+          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
+        </div>
+      </a>
+      <a class="card" href="housing-supply-rental-assistance.html">
+        <div class="card-icon"><i class="ti ti-book" aria-hidden="true"></i></div>
+        <div class="card-body">
+          <div class="card-title">Housing Supply and Rental Assistance</div>
+          <div class="card-arrow"><i class="ti ti-arrow-right" aria-hidden="true"></i> View graphic</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
